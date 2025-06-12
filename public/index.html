@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VSMI File Upload</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    body {
+      padding-top: 2rem;
+      padding-bottom: 2rem;
+    }
+    .file-card {
+      margin-bottom: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 1rem;
+      background-color: #f9f9f9;
+    }
+    .upload-area {
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      margin-bottom: 2rem;
+      background-color: #f8f9fa;
+    }
+    .upload-area:hover {
+      border-color: #0d6efd;
+      background-color: #f1f8ff;
+    }
+    .file-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .file-size {
+      color: #6c757d;
+      font-size: 0.9rem;
+    }
+    .file-date {
+      color: #6c757d;
+      font-size: 0.8rem;
+    }
+    .file-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .tooltip-inner {
+      max-width: 300px;
+    }
+    .copy-tooltip {
+      cursor: pointer;
+    }
+    #selectedFileInfo {
+      margin-top: 10px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12 text-center mb-4">
+        <h1>VSMI File Upload</h1>
+        <p class="lead">Tải lên và quản lý file của bạn</p>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-12">
+        <div class="upload-area" id="uploadArea">
+          <h4>Tải lên file</h4>
+          <p>Kéo và thả file hoặc nhấn vào đây để chọn file</p>
+          <form id="uploadForm" enctype="multipart/form-data">
+            <input type="file" id="fileInput" class="form-control mb-3" style="display: none;">
+            <button type="button" id="browseBtn" class="btn btn-primary">Chọn file</button>
+            <button type="submit" id="uploadBtn" class="btn btn-success ms-2">Tải lên</button>
+            
+            <div id="selectedFileInfo" class="alert alert-info text-start">
+              <div><strong>Tên file:</strong> <span id="fileName"></span></div>
+              <div><strong>Kích thước:</strong> <span id="fileSize"></span></div>
+              <div><strong>Loại:</strong> <span id="fileType"></span></div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-12">
+        <h3>Danh sách file</h3>
+        <div id="filesList" class="mt-3">
+          <!-- File sẽ được thêm bằng JavaScript -->
+          <div class="text-center text-muted" id="noFiles">
+            <p>Chưa có file nào được tải lên.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Khai báo các phần tử
+      const uploadForm = document.getElementById('uploadForm');
+      const fileInput = document.getElementById('fileInput');
+      const browseBtn = document.getElementById('browseBtn');
+      const uploadArea = document.getElementById('uploadArea');
+      const filesList = document.getElementById('filesList');
+      const noFilesMsg = document.getElementById('noFiles');
+      const selectedFileInfo = document.getElementById('selectedFileInfo');
+      const fileNameElem = document.getElementById('fileName');
+      const fileSizeElem = document.getElementById('fileSize');
+      const fileTypeElem = document.getElementById('fileType');
+
+      // Sự kiện click vào nút Browse
+      browseBtn.addEventListener('click', () => {
+        fileInput.click();
+      });
+      
+      // Hiển thị thông tin file khi được chọn
+      fileInput.addEventListener('change', () => {
+        if (fileInput.files && fileInput.files.length > 0) {
+          const file = fileInput.files[0];
+          fileNameElem.textContent = file.name;
+          fileSizeElem.textContent = formatFileSize(file.size);
+          fileTypeElem.textContent = file.type || 'Không xác định';
+          selectedFileInfo.style.display = 'block';
+        } else {
+          selectedFileInfo.style.display = 'none';
+        }
+      });
+
+      // Sự kiện kéo và thả
+      uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('bg-light');
+      });
+
+      uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('bg-light');
+      });
+
+      uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('bg-light');
+        if (e.dataTransfer.files.length) {
+          fileInput.files = e.dataTransfer.files;
+          
+          // Hiển thị thông tin file khi kéo thả
+          const file = e.dataTransfer.files[0];
+          fileNameElem.textContent = file.name;
+          fileSizeElem.textContent = formatFileSize(file.size);
+          fileTypeElem.textContent = file.type || 'Không xác định';
+          selectedFileInfo.style.display = 'block';
+        }
+      });
+
+      // Xử lý upload file
+      uploadForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        if (!fileInput.files || fileInput.files.length === 0) {
+          alert('Vui lòng chọn file để tải lên');
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        try {
+          const response = await fetch('/api/files/upload', {
+            method: 'POST',
+            body: formData
+          });
+
+          const result = await response.json();
+          
+          if (response.ok) {
+            alert('File đã được tải lên thành công');
+            uploadForm.reset();
+            selectedFileInfo.style.display = 'none';
+            loadFiles();
+          } else {
+            alert(`Lỗi: ${result.message}`);
+          }
+        } catch (error) {
+          console.error('Upload error:', error);
+          alert('Đã xảy ra lỗi khi tải lên file');
+        }
+      });
+
+      // Hàm tải danh sách file
+      async function loadFiles() {
+        try {
+          const response = await fetch('/api/files');
+          const data = await response.json();
+
+          if (data.files && data.files.length > 0) {
+            noFilesMsg.style.display = 'none';
+            renderFiles(data.files);
+          } else {
+            noFilesMsg.style.display = 'block';
+            filesList.innerHTML = '';
+            filesList.appendChild(noFilesMsg);
+          }
+        } catch (error) {
+          console.error('Error loading files:', error);
+          alert('Không thể tải danh sách file');
+        }
+      }
+
+      // Hàm copy đường dẫn vào clipboard
+      function copyToClipboard(text) {
+        navigator.clipboard.writeText(text)
+          .then(() => {
+            console.log('Đường dẫn đã được copy');
+          })
+          .catch(err => {
+            console.error('Lỗi khi copy đường dẫn:', err);
+          });
+      }
+
+      // Hàm khởi tạo tooltip
+      function initTooltips() {
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        tooltipTriggerList.forEach(el => {
+          new bootstrap.Tooltip(el);
+        });
+      }
+
+      // Hàm render danh sách file
+      function renderFiles(files) {
+        // Xóa tất cả các file hiện tại và tin nhắn "không có file"
+        while (filesList.firstChild) {
+          filesList.removeChild(filesList.firstChild);
+        }
+
+        // Thêm từng file mới
+        files.forEach(file => {
+          const fileCard = document.createElement('div');
+          fileCard.className = 'file-card';
+          fileCard.dataset.fileId = file.id;
+
+          // Format file size
+          const fileSize = formatFileSize(file.size);
+          
+          // Format date
+          const uploadDate = new Date(file.uploadDate);
+          const formattedDate = uploadDate.toLocaleDateString('vi-VN') + ' ' + 
+                               uploadDate.toLocaleTimeString('vi-VN');
+          
+          // Tạo đường dẫn trực tiếp
+          const directUrl = `${window.location.origin}/file/${encodeURIComponent(file.originalName)}`;
+
+          fileCard.innerHTML = `
+            <div class="file-info">
+              <div>
+                <h5>${file.originalName}</h5>
+                <div class="file-size">${fileSize}</div>
+                <div class="file-date">Tải lên: ${formattedDate}</div>
+              </div>
+              <div class="file-actions">
+                <a href="/api/files/${file.id}/download" class="btn btn-sm btn-primary">Tải xuống</a>
+                <button class="btn btn-sm btn-info copy-link" data-url="${directUrl}" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy đường dẫn trực tiếp">
+                  <i class="bi bi-link-45deg"></i> Copy URL
+                </button>
+                <button class="btn btn-sm btn-danger delete-btn" data-id="${file.id}">Xóa</button>
+              </div>
+            </div>
+          `;
+
+          filesList.appendChild(fileCard);
+
+          // Thêm sự kiện copy đường dẫn
+          const copyBtn = fileCard.querySelector('.copy-link');
+          copyBtn.addEventListener('click', (e) => {
+            const url = e.currentTarget.getAttribute('data-url');
+            copyToClipboard(url);
+            
+            // Cập nhật tooltip
+            const tooltip = bootstrap.Tooltip.getInstance(e.currentTarget);
+            e.currentTarget.setAttribute('data-bs-original-title', 'Đã copy!');
+            tooltip.show();
+            
+            // Đặt lại tooltip sau 2 giây
+            setTimeout(() => {
+              e.currentTarget.setAttribute('data-bs-original-title', 'Copy đường dẫn trực tiếp');
+              tooltip.hide();
+            }, 2000);
+          });
+
+          // Thêm sự kiện xóa file
+          const deleteBtn = fileCard.querySelector('.delete-btn');
+          deleteBtn.addEventListener('click', async () => {
+            if (confirm('Bạn có chắc chắn muốn xóa file này?')) {
+              try {
+                const response = await fetch(`/api/files/${file.id}`, {
+                  method: 'DELETE'
+                });
+
+                if (response.ok) {
+                  fileCard.remove();
+                  if (filesList.children.length === 0) {
+                    noFilesMsg.style.display = 'block';
+                    filesList.appendChild(noFilesMsg);
+                  }
+                } else {
+                  const data = await response.json();
+                  alert(`Lỗi: ${data.message}`);
+                }
+              } catch (error) {
+                console.error('Delete error:', error);
+                alert('Đã xảy ra lỗi khi xóa file');
+              }
+            }
+          });
+        });
+
+        // Khởi tạo tooltips sau khi render
+        setTimeout(() => {
+          initTooltips();
+        }, 100);
+      }
+
+      // Hàm format file size
+      function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+      }
+
+      // Load files khi trang được tải
+      loadFiles();
+    });
+  </script>
+</body>
+</html> 
