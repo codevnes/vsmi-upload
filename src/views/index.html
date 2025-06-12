@@ -222,7 +222,13 @@
 
       // Hàm copy đường dẫn vào clipboard
       function copyToClipboard(text) {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
+        // Kiểm tra xem navigator.clipboard có tồn tại không
+        if (!navigator || !navigator.clipboard || !navigator.clipboard.writeText) {
+          fallbackCopyTextToClipboard(text);
+          return;
+        }
+        
+        try {
           navigator.clipboard.writeText(text)
             .then(() => {
               console.log('Đường dẫn đã được copy');
@@ -231,8 +237,8 @@
               console.error('Lỗi khi copy đường dẫn:', err);
               fallbackCopyTextToClipboard(text);
             });
-        } else {
-          // Fallback cho trình duyệt không hỗ trợ Clipboard API
+        } catch (err) {
+          console.error('Lỗi khi truy cập clipboard API:', err);
           fallbackCopyTextToClipboard(text);
         }
       }
@@ -258,11 +264,13 @@
             console.log('Fallback: Copy thành công');
           } else {
             console.error('Fallback: Copy thất bại');
+            alert('Không thể copy URL. Vui lòng copy thủ công: ' + text);
           }
           
           document.body.removeChild(textArea);
         } catch (err) {
           console.error('Fallback: Không thể copy', err);
+          alert('Không thể copy URL. Vui lòng copy thủ công: ' + text);
         }
       }
 
