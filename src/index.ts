@@ -37,19 +37,14 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Copy file HTML từ views vào public để phục vụ
 const htmlSource = path.join(viewsDir, 'index.html');
-const htmlDest = path.join(__dirname, '../public/index.html');
 
-if (fs.existsSync(htmlSource)) {
-  fs.copyFileSync(htmlSource, htmlDest);
-  console.log(`Copied HTML template from ${htmlSource} to ${htmlDest}`);
-}
 
 // Đường dẫn API
 app.use('/api/files', fileRoutes);
 
 // Serve trang HTML
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
+  res.sendFile(htmlSource);
 });
 
 // Route để truy cập file trực tiếp bằng tên
