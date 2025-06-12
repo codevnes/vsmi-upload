@@ -1,56 +1,73 @@
-# VSMI Upload Server
+# VSMI File Upload
 
-Ứng dụng server upload file sử dụng Express.js với TypeScript, lưu trữ dữ liệu bằng JSON database.
+A simple file upload server with Express.js, TypeScript, and LowDB.
 
-## Tính năng
+## Features
 
-- Upload file đơn/nhiều
-- Lưu trữ thông tin file trong JSON database
-- Hiển thị danh sách file đã upload
-- Tải xuống file
-- Xóa file
+- Upload files via web interface or API
+- List uploaded files
+- Download files
+- Delete files
+- Direct file access via URL
+- Copy file URL to clipboard
 
-## Cài đặt
-
-### Yêu cầu
-
-- Node.js (v14 trở lên)
-- pnpm (hoặc npm/yarn)
-
-### Các bước cài đặt
-
-1. Clone repository:
+## Installation
 
 ```bash
-git clone <repository-url>
-cd vsmi-upload
+# Install dependencies
+npm install
+
+# Install PM2 globally (if not already installed)
+npm install -g pm2
 ```
 
-2. Cài đặt các dependencies:
+## Development
 
 ```bash
-pnpm install
+# Run in development mode
+npm run dev
 ```
 
-3. Build project:
+## Production Deployment with PM2
+
+The application is configured to run on port 2025 in production mode using PM2.
 
 ```bash
-pnpm build
+# Build the application
+./build.sh
+
+# Start with PM2
+npm run pm2:start
+
+# Check status
+npm run pm2:status
+
+# View logs
+npm run pm2:logs
+
+# Restart the application
+npm run pm2:restart
+
+# Stop the application
+npm run pm2:stop
 ```
 
-4. Khởi động server:
+## PM2 Configuration
 
-```bash
-pnpm start
-```
+The PM2 configuration is in `ecosystem.config.js`. You can modify this file to change:
 
-Hoặc khởi động development server với hot reload:
+- Application port (default: 2025)
+- Number of instances
+- Memory limit
+- Other PM2 settings
 
-```bash
-pnpm dev
-```
+## API Endpoints
 
-Server sẽ chạy tại địa chỉ http://localhost:3000
+- `GET /api/files` - List all files
+- `POST /api/files/upload` - Upload a file
+- `GET /api/files/:id/download` - Download a file
+- `DELETE /api/files/:id` - Delete a file
+- `GET /file/:filename` - Direct access to a file by filename
 
 ## Cấu trúc dự án
 
@@ -70,14 +87,6 @@ vsmi-upload/
 ├── dist/               # Compiled JavaScript
 └── tsconfig.json       # TypeScript config
 ```
-
-## API Endpoints
-
-- `POST /api/files/upload` - Upload file
-- `GET /api/files` - Lấy danh sách các file
-- `GET /api/files/:id` - Lấy thông tin một file
-- `GET /api/files/:id/download` - Tải xuống file
-- `DELETE /api/files/:id` - Xóa file
 
 ## Giao diện người dùng
 

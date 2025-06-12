@@ -8,7 +8,7 @@ import { Request, Response } from 'express';
 
 // Khởi tạo express app
 const app = express();
-const PORT = process.env.PORT || 3005;
+const PORT = process.env.PORT || 2025;
 
 // Middleware
 app.use(express.json());
