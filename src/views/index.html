@@ -54,6 +54,16 @@
     .copy-button {
       min-width: 100px;
     }
+    .url-input-group {
+      margin-top: 8px;
+      margin-bottom: 8px;
+      max-width: 100%;
+    }
+    .url-input {
+      font-size: 0.8rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
     @media (max-width: 768px) {
       .file-info {
         flex-direction: column;
@@ -220,60 +230,6 @@
         }
       }
 
-      // Hàm copy đường dẫn vào clipboard
-      function copyToClipboard(text) {
-        // Kiểm tra xem navigator.clipboard có tồn tại không
-        if (!navigator || !navigator.clipboard || !navigator.clipboard.writeText) {
-          fallbackCopyTextToClipboard(text);
-          return;
-        }
-        
-        try {
-          navigator.clipboard.writeText(text)
-            .then(() => {
-              console.log('Đường dẫn đã được copy');
-            })
-            .catch(err => {
-              console.error('Lỗi khi copy đường dẫn:', err);
-              fallbackCopyTextToClipboard(text);
-            });
-        } catch (err) {
-          console.error('Lỗi khi truy cập clipboard API:', err);
-          fallbackCopyTextToClipboard(text);
-        }
-      }
-
-      // Phương pháp thay thế để copy text
-      function fallbackCopyTextToClipboard(text) {
-        try {
-          const textArea = document.createElement('textarea');
-          textArea.value = text;
-          
-          // Tránh cuộn xuống
-          textArea.style.top = '0';
-          textArea.style.left = '0';
-          textArea.style.position = 'fixed';
-          textArea.style.opacity = '0';
-          
-          document.body.appendChild(textArea);
-          textArea.focus();
-          textArea.select();
-          
-          const successful = document.execCommand('copy');
-          if (successful) {
-            console.log('Fallback: Copy thành công');
-          } else {
-            console.error('Fallback: Copy thất bại');
-            alert('Không thể copy URL. Vui lòng copy thủ công: ' + text);
-          }
-          
-          document.body.removeChild(textArea);
-        } catch (err) {
-          console.error('Fallback: Không thể copy', err);
-          alert('Không thể copy URL. Vui lòng copy thủ công: ' + text);
-        }
-      }
-
       // Hàm render danh sách file
       function renderFiles(files) {
         // Xóa tất cả các file hiện tại và tin nhắn "không có file"
@@ -307,28 +263,34 @@
               </div>
               <div class="file-actions">
                 <a href="/api/files/${file.id}/download" class="btn btn-sm btn-primary">Tải xuống</a>
-                <button class="btn btn-sm btn-info copy-button" data-url="${directUrl}">Copy URL</button>
-                <button class="btn btn-sm btn-danger delete-btn" data-id="${file.id}">Xóa</button>
+                <div class="input-group input-group-sm url-input-group">
+                  <input type="text" class="form-control form-control-sm url-input" value="${directUrl}" readonly>
+                  <button class="btn btn-sm btn-info select-url-btn">Chọn URL</button>
+                </div>
+                <button class="btn btn-sm btn-danger delete-btn mt-2" data-id="${file.id}">Xóa</button>
               </div>
             </div>
           `;
 
           filesList.appendChild(fileCard);
 
-          // Thêm sự kiện copy đường dẫn
-          const copyBtn = fileCard.querySelector('.copy-button');
-          copyBtn.addEventListener('click', (e) => {
-            const url = e.currentTarget.getAttribute('data-url');
-            copyToClipboard(url);
+          // Thêm sự kiện chọn URL
+          const selectUrlBtn = fileCard.querySelector('.select-url-btn');
+          const urlInput = fileCard.querySelector('.url-input');
+          
+          selectUrlBtn.addEventListener('click', () => {
+            urlInput.select();
+            urlInput.setSelectionRange(0, 99999); // Cho mobile
             
-            // Hiển thị thông báo đã copy
-            const originalText = e.currentTarget.textContent;
-            e.currentTarget.textContent = 'Đã copy!';
-            
-            // Đặt lại text sau 2 giây
-            setTimeout(() => {
-              e.currentTarget.textContent = originalText;
-            }, 2000);
+            try {
+              document.execCommand('copy');
+              selectUrlBtn.textContent = 'Đã chọn!';
+              setTimeout(() => {
+                selectUrlBtn.textContent = 'Chọn URL';
+              }, 2000);
+            } catch (err) {
+              console.error('Không thể chọn text:', err);
+            }
           });
 
           // Thêm sự kiện xóa file
