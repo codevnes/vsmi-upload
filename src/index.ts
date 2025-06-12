@@ -10,10 +10,13 @@ import { Request, Response } from 'express';
 const app = express();
 const PORT = process.env.PORT || 2025;
 
+// Định nghĩa base directory
+const ROOT_DIR = path.resolve(__dirname, '..');
+
 // Middleware
 app.use(express.json());
 app.use(cors());
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(ROOT_DIR, 'public')));
 
 // Log middleware để debug request
 app.use((req, res, next) => {
@@ -23,9 +26,10 @@ app.use((req, res, next) => {
 });
 
 // Đảm bảo thư mục data và uploads tồn tại
-const dataDir = path.join(__dirname, '../data');
-const uploadsDir = path.join(__dirname, '../uploads');
-const viewsDir = path.join(__dirname, './views');
+const dataDir = path.join(ROOT_DIR, 'data');
+const uploadsDir = path.join(ROOT_DIR, 'uploads');
+const viewsDir = path.join(__dirname, 'views');
+const publicDir = path.join(ROOT_DIR, 'public');
 
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
@@ -35,11 +39,26 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
+if (!fs.existsSync(publicDir)) {
+  fs.mkdirSync(publicDir, { recursive: true });
+}
+
 // Copy file HTML từ views vào public để phục vụ
 const htmlSource = path.join(viewsDir, 'index.html');
+const publicHtmlPath = path.join(publicDir, 'index.html');
 
+// Sao chép file index.html từ views sang public
+try {
+  if (fs.existsSync(htmlSource)) {
+    fs.copyFileSync(htmlSource, publicHtmlPath);
+    console.log('Copied index.html to public directory');
+  } else {
+    console.error('Source HTML file not found:', htmlSource);
+  }
+} catch (error) {
+  console.error('Error copying HTML file:', error);
+}
 
-// Đường dẫn API
 app.use('/api/files', fileRoutes);
 
 // Serve trang HTML
